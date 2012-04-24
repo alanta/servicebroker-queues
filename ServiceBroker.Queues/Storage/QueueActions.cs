@@ -1,6 +1,6 @@
 using System;
 using System.Data;
-using log4net;
+using Common.Logging;
 
 namespace ServiceBroker.Queues.Storage
 {
@@ -68,9 +68,9 @@ namespace ServiceBroker.Queues.Storage
         private static MessageEnvelope Fill(IDataRecord reader)
         {
             var conversationId = reader.GetGuid(0);
-        	var messageEnvelope = ((byte[]) reader.GetValue(1)).ToMessageEnvelope();
-        	messageEnvelope.ConversationId = conversationId;
-        	return messageEnvelope;
+           var messageEnvelope = ((byte[]) reader.GetValue(1)).ToMessageEnvelope();
+           messageEnvelope.ConversationId = conversationId;
+           return messageEnvelope;
         }
     }
 }

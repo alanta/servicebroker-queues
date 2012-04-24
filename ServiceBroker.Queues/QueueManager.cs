@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Transactions;
-using log4net;
+using Common.Logging;
 using ServiceBroker.Queues.Storage;
 
 namespace ServiceBroker.Queues
@@ -75,7 +75,7 @@ namespace ServiceBroker.Queues
         public MessageEnvelope Receive(Uri queueUri, TimeSpan timeout)
         {
             EnsureEnslistment();
-         
+
             var message = GetMessageFromQueue(queueUri);
             return message;
         }
