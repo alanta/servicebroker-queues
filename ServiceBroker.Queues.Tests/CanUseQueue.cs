@@ -10,9 +10,10 @@ namespace ServiceBroker.Queues.Tests
         private readonly Uri queueUri = new Uri("tcp://localhost:2204/h");
         private readonly QueueStorage qf;
 
-        public CanUseQueue() : base("testqueue")
+        public CanUseQueue()
         {
-            qf = new QueueStorage("testqueue");
+           EnsureStorage( ConnectionString );
+            qf = new QueueStorage( ConnectionString );
             qf.Initialize();
             qf.Global(actions =>
             {

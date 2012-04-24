@@ -11,18 +11,19 @@ namespace ServiceBroker.Queues.Tests
         private readonly QueueManager queueManager;
         private readonly Uri queueUri = new Uri("tcp://localhost:2204/h");
 
-        public ReceivingFromServiceBrokerQueue() : base("testqueue")
+        public ReceivingFromServiceBrokerQueue()
         {
-            queueManager = new QueueManager("testqueue");
-			queueManager.CreateQueues(queueUri);
+           EnsureStorage( ConnectionString );
+           queueManager = new QueueManager( ConnectionString );
+           queueManager.CreateQueues( queueUri );
         }
 
         public void Dispose()
         {
-            queueManager.Dispose();
+           queueManager.Dispose();
         }
 
-    	[Fact]
+       [Fact]
         public void CanReceiveFromQueue()
         {
             using (var tx = new TransactionScope())

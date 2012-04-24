@@ -13,15 +13,19 @@ namespace ServiceBroker.Queues
         private readonly QueueStorage queueStorage;
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
 
-        public QueueManager(string connectionStringName)
+        public QueueManager(string connectionString)
+           : this( new QueueStorage( connectionString ))
         {
-            queueStorage = new QueueStorage(connectionStringName);
-            queueStorage.Initialize();
-
-            purgeOldDataTimer = new Timer(PurgeOldData, null, TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(3));
         }
 
-        private void PurgeOldData(object ignored)
+        public QueueManager( QueueStorage storage )
+        {
+           queueStorage = storage;
+           queueStorage.Initialize();
+           purgeOldDataTimer = new Timer( PurgeOldData, null, TimeSpan.FromMinutes( 3 ), TimeSpan.FromMinutes( 3 ) );
+        }
+
+       private void PurgeOldData(object ignored)
         {
             logger.DebugFormat("Starting to purge old data");
             try
