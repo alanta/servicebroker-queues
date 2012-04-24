@@ -1,5 +1,5 @@
 properties { 
-  $base_dir  = resolve-path .
+  $base_dir  = Split-Path $psake.build_script_file
   $lib_dir = "$base_dir\Lib"
   $build_dir = "$base_dir\build" 
   $buildartifacts_dir = "$build_dir\" 
@@ -11,14 +11,14 @@ properties {
 
 include .\psake_ext.ps1
 	
-task default -depends Release
+Task Default -depends Release
 
-task Clean { 
+Task Clean { 
   remove-item -force -recurse $buildartifacts_dir -ErrorAction SilentlyContinue 
   remove-item -force -recurse $release_dir -ErrorAction SilentlyContinue 
 } 
 
-task Init -depends Clean { 
+Task Init -depends Clean { 
 	Generate-Assembly-Info `
 		-file "$base_dir\ServiceBroker.Queues\Properties\AssemblyInfo.cs" `
 		-title "ServiceBroker Queues $version" `
@@ -43,19 +43,19 @@ task Init -depends Clean {
 	new-item $buildartifacts_dir -itemType directory 
 } 
 
-task Compile -depends Init { 
-  exec msbuild "/p:OutDir=""$buildartifacts_dir "" $sln_file" /p:Configuration=Release
+Task Compile -depends Init { 
+  Exec { msbuild $sln_file /t:Rebuild /p:Configuration=Release /p:OutDir=$buildartifacts_dir/ }
 } 
 
-task Test -depends Compile {
+Task Test -depends Compile {
   $old = pwd
   cd $build_dir
-  exec "$tools_dir\xUnit\xunit.console.exe" "$build_dir\ServiceBroker.Queues.Tests.dll"
+  Exec { "$tools_dir\xUnit\xunit.console.exe $build_dir\ServiceBroker.Queues.Tests.dll" }
   cd $old		
 }
 
 
-task Release -depends Test {
+Task Release -depends Test {
 	& $tools_dir\zip.exe -9 -A -j `
 		$release_dir\ServiceBroker.Queues.zip `
         $build_dir\ServiceBroker.Queues.dll `
