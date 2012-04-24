@@ -9,18 +9,18 @@ namespace ServiceBroker.Queues.Storage
         private readonly Uri queueUri;
         private AbstractActions actions;
         private readonly ILog logger = LogManager.GetLogger(typeof (QueueActions));
+       private readonly ISerializationService serializationService;
 
-        public QueueActions(Uri queueUri, AbstractActions actions)
-        {
-            this.queueUri = queueUri;
-            this.actions = actions;
-        }
-
-        public AbstractActions Actions
-        {
-            get { return actions; }
-            set{ actions = value; }
-        }
+       public QueueActions( Uri queueUri, AbstractActions actions, ISerializationService serializationService = null )
+       {
+          if ( queueUri == null )
+             throw new ArgumentNullException( "queueUri" );
+          if ( actions == null )
+             throw new ArgumentNullException( "actions" );
+          this.queueUri = queueUri;
+          this.actions = actions;
+          this.serializationService = serializationService ?? new DefaultSerializationService();
+       }
 
         public MessageEnvelope Dequeue()
         {
@@ -45,7 +45,7 @@ namespace ServiceBroker.Queues.Storage
 
         public void RegisterToSend(Uri destination, MessageEnvelope payload)
         {
-            byte[] data = payload.Serialize();
+           byte[] data = serializationService.Serialize( payload );
             actions.ExecuteCommand("[SBQ].[RegisterToSend]", cmd =>
             {
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -59,16 +59,16 @@ namespace ServiceBroker.Queues.Storage
                 cmd.Parameters.AddWithValue("@data", data);
                 cmd.ExecuteNonQuery();
             });
-            logger.DebugFormat("Created output message for 'tcp://{0}:{1}'",
+           logger.DebugFormat( "Created output message for 'tcp://{0}:{1}'",
                                destination.Host,
                                destination.Port
-                );
+              );
         }
 
-        private static MessageEnvelope Fill(IDataRecord reader)
+        private MessageEnvelope Fill( IDataRecord reader )
         {
-            var conversationId = reader.GetGuid(0);
-           var messageEnvelope = ((byte[]) reader.GetValue(1)).ToMessageEnvelope();
+           var conversationId = reader.GetGuid( 0 );
+           var messageEnvelope = serializationService.Deserialize( (byte[]) reader.GetValue( 1 ) );
            messageEnvelope.ConversationId = conversationId;
            return messageEnvelope;
         }

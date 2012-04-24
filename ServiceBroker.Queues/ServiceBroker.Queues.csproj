@@ -83,12 +83,13 @@
     <Compile Include="QueueManager.cs" />
     <Compile Include="Scripts\NormalizedEmbeddedScriptProvider.cs" />
     <Compile Include="Storage\AbstractActions.cs" />
+    <Compile Include="Storage\DefaultSerializationService.cs" />
     <Compile Include="Storage\ExtensionMethods.cs" />
     <Compile Include="Storage\GlobalActions.cs" />
+    <Compile Include="Storage\ISerializationService.cs" />
     <Compile Include="Storage\QueueActions.cs" />
     <Compile Include="Storage\QueueStorage.cs" />
     <Compile Include="Storage\SchemaManager.cs" />
-    <Compile Include="Storage\SerializationExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\1.0\Schema.sql" />
