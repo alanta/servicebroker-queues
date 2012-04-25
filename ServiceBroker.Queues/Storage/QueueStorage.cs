@@ -35,10 +35,7 @@ namespace ServiceBroker.Queues.Storage
 					var schemaVersion = reader.GetString(reader.GetOrdinal("schemaVersion"));
 					if (schemaVersion != SchemaManager.SchemaVersion)
 					{
-						throw new InvalidOperationException("The version on disk (" + schemaVersion +
-															") is different that the version supported by this library: " +
-															SchemaManager.SchemaVersion + Environment.NewLine +
-															"You need to migrate the database version to the library version, alternatively, if the data isn't important, you can drop the items in the [SBQ] schema and run the scripts to create it.");
+                  throw new InvalidOperationException(string.Format( "The queue schema version in the database is {0}, this library supports version {1}.\nPlease update or re-install by calling SchemaManager.Install.", schemaVersion, SchemaManager.SchemaVersion ) );
 					}
 				}
 			}
