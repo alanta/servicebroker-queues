@@ -1,13 +1,17 @@
 using System;
 using System.Data.SqlClient;
 using System.Globalization;
+using Common.Logging;
 using DbUp;
+using DbUp.Engine.Output;
 using ServiceBroker.Queues.Scripts;
 
 namespace ServiceBroker.Queues.Storage
 {
    public class SchemaManager
    {
+      private readonly ILog logger = LogManager.GetLogger<SchemaManager>();
+
       public static string SchemaVersion { get { return "1.1"; } }
 
       public void Install( string connectionString, int? port = null )
@@ -15,7 +19,7 @@ namespace ServiceBroker.Queues.Storage
          var updater = DeployChanges.To
             .SqlDatabase( connectionString, "SBQ" )
             .WithScripts( new NormalizedEmbeddedScriptProvider( script => script.EndsWith( ".sql" ) ) )
-            .LogToConsole()
+            .LogTo( new UpgradeLogAdapter( logger ) )
             .Build();
 
          if ( updater.IsUpgradeRequired() )
@@ -72,6 +76,32 @@ namespace ServiceBroker.Queues.Storage
 GRANT CONNECT ON ENDPOINT::ServiceBusEndpoint TO [public];";
 
             command.ExecuteNonQuery();
+         }
+      }
+
+      private class UpgradeLogAdapter : IUpgradeLog
+      {
+         private readonly ILog _log;
+
+         public UpgradeLogAdapter( ILog log )
+         {
+            if ( log == null ) throw new ArgumentNullException( "log" );
+            _log = log;
+         }
+
+         public void WriteInformation( string format, params object[] args )
+         {
+            _log.InfoFormat( format, args );
+         }
+
+         public void WriteError( string format, params object[] args )
+         {
+            _log.ErrorFormat( format, args );
+         }
+
+         public void WriteWarning( string format, params object[] args )
+         {
+            _log.WarnFormat( format, args );
          }
       }
    }
