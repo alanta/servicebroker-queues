@@ -7,6 +7,7 @@ properties {
   $version = "1.0.0.0"
   $tools_dir = "$base_dir\Tools"
   $release_dir = "$base_dir\Release"
+  $xunit = "$base_dir\Tools\xUnit\xunit.console.clr4.exe"
 } 
 
 include .\psake_ext.ps1
@@ -48,7 +49,7 @@ Task Compile -depends Init {
 } 
 
 Task Test -depends Compile {
-  Exec { .$tools_dir\xUnit\xunit.console.exe $build_dir\ServiceBroker.Queues.Tests.dll }}
+  Exec { .$xunit $build_dir\ServiceBroker.Queues.Tests.dll }}
 
 
 Task Release -depends Test {
