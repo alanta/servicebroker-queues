@@ -80,6 +80,7 @@
     <Compile Include="ReceivingFromServiceBrokerQueue.cs" />
     <Compile Include="UtilityTests.cs" />
     <Compile Include="Utils\StorageUtil.cs" />
+    <Compile Include="When_peeking_at_a_queue.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ServiceBroker.Queues\ServiceBroker.Queues.csproj">

@@ -67,6 +67,11 @@ namespace ServiceBroker.Queues
             return new Queue(this, queueUri);
         }
 
+        public MessageEnvelope Peek(Uri queueUri)
+        {
+           return PeekAtQueue( queueUri );
+        }
+
         public MessageEnvelope Receive(Uri queueUri)
         {
             return Receive(queueUri, TimeSpan.FromDays(1));
@@ -111,7 +116,7 @@ namespace ServiceBroker.Queues
 
         public void Send(Uri fromQueue, Uri toQueue, MessageEnvelope payload)
         {
-            EnsureEnslistment();
+            EnsureEnlistment();
 
             queueStorage.Global(actions =>
             {
@@ -122,7 +127,7 @@ namespace ServiceBroker.Queues
             });
         }
 
-        private void EnsureEnslistment()
+        private void EnsureEnlistment()
         {
             AssertNotDisposed();
 
@@ -141,6 +146,17 @@ namespace ServiceBroker.Queues
                 actions.Commit();
             });
             return message;
+        }
+
+        private MessageEnvelope PeekAtQueue( Uri queueUri )
+        {
+           AssertNotDisposed();
+           MessageEnvelope message = null;
+           queueStorage.Global( actions =>
+           {
+              message = actions.GetQueue( queueUri ).Peek();
+           } );
+           return message;
         }
     }
 }

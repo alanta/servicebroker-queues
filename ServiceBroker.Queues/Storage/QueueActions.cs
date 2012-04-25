@@ -22,6 +22,27 @@ namespace ServiceBroker.Queues.Storage
           this.serializationService = serializationService ?? new DefaultSerializationService();
        }
 
+       public MessageEnvelope Peek()
+       {
+          MessageEnvelope message = null;
+          actions.ExecuteCommand( "[SBQ].[Peek]", cmd =>
+          {
+             cmd.CommandType = CommandType.StoredProcedure;
+             cmd.Parameters.AddWithValue( "@queueName", queueUri.ToServiceName() );
+             using ( var reader = cmd.ExecuteReader( CommandBehavior.Default ) )
+             {
+                if ( !reader.Read() )
+                {
+                   message = null;
+                   return;
+                }
+
+                message = Fill( reader );
+             }
+          } );
+          return message;
+       }
+
         public MessageEnvelope Dequeue()
         {
             MessageEnvelope message = null;

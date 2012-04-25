@@ -8,7 +8,7 @@ namespace ServiceBroker.Queues.Storage
 {
    public class SchemaManager
    {
-      public static string SchemaVersion { get { return "1.0"; } }
+      public static string SchemaVersion { get { return "1.1"; } }
 
       public void Install( string connectionString, int? port = null )
       {
