@@ -4,7 +4,7 @@ using System.Data.SqlClient;
 
 namespace ServiceBroker.Queues.Storage
 {
-    public class GlobalActions : AbstractActions
+    internal class GlobalActions : AbstractActions
     {
         public GlobalActions(SqlConnection connection) : base(connection)
         {

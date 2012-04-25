@@ -7,6 +7,9 @@ using ServiceBroker.Queues.Storage;
 
 namespace ServiceBroker.Queues
 {
+   /// <summary>
+   /// Provides access to service broker queues.
+   /// </summary>
     public class QueueManager : IDisposable
     {
         private volatile bool wasDisposed;
@@ -15,14 +18,13 @@ namespace ServiceBroker.Queues
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
         private readonly object newMessageArrivedLock = new object();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueueManager"/> class.
+        /// </summary>
+        /// <param name="connectionString">The database connection string.</param>
         public QueueManager(string connectionString)
-           : this( new QueueStorage( connectionString ))
         {
-        }
-
-        public QueueManager( QueueStorage storage )
-        {
-           queueStorage = storage;
+           queueStorage = new QueueStorage( connectionString );
            queueStorage.Initialize();
            purgeOldDataTimer = new Timer( PurgeOldData, null, TimeSpan.FromMinutes( 3 ), TimeSpan.FromMinutes( 3 ) );
         }
@@ -45,6 +47,9 @@ namespace ServiceBroker.Queues
             }
         }
 
+       /// <summary>
+       /// Releases all resources.
+       /// </summary>
         public void Dispose()
         {
             if(wasDisposed)
@@ -64,23 +69,43 @@ namespace ServiceBroker.Queues
                 throw new ObjectDisposedException("QueueManager");
         }
 
+        /// <summary>
+        /// Gets the queue.
+        /// </summary>
+        /// <param name="queueUri">The queue URI.</param>
+        /// <returns>The queue.</returns>
         public IQueue GetQueue(Uri queueUri)
         {
-            return new Queue(this, queueUri);
+           if ( queueUri == null )
+              throw new ArgumentNullException( "queueUri" );
+
+           return new Queue(this, queueUri);
         }
 
-        public MessageEnvelope Peek(Uri queueUri)
+        /// <summary>
+        /// Peeksa  the specified queue.
+        /// </summary>
+        /// <param name="queueUri">The queue URI.</param>
+        /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
+       public MessageEnvelope Peek(Uri queueUri)
         {
+           if ( queueUri == null )
+              throw new ArgumentNullException( "queueUri" );
+
            return PeekAtQueue( queueUri );
         }
 
-        public MessageEnvelope Receive(Uri queueUri)
+       /// <summary>
+       /// Receives a message from the specified queue.
+       /// </summary>
+       /// <param name="queueUri">The queue URI.</param>
+       /// <param name="timeout">The time to wait for a message or <c>null</c> to return immediately.</param>
+       /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
+       public MessageEnvelope Receive( Uri queueUri, TimeSpan? timeout = null )
         {
-            return Receive(queueUri, null );
-        }
+           if ( queueUri == null )
+              throw new ArgumentNullException( "queueUri" );
 
-        public MessageEnvelope Receive( Uri queueUri, TimeSpan? timeout )
-        {
            EnsureEnlistment();
 
            if( null == timeout )
@@ -108,22 +133,10 @@ namespace ServiceBroker.Queues
            }
         }
 
-
-        public Uri WaitForQueueWithMessageNotification()
-        {
-            if(Transaction.Current != null)
-                throw new InvalidOperationException("You cannot find queue with messages with an ambient transaction, this method is not MSDTC friendly");
-
-            Uri queueUri = null;
-            queueStorage.Global(actions =>
-            {
-                actions.BeginTransaction();
-                queueUri = actions.PollForMessage();
-                actions.Commit();
-            });
-            return queueUri;
-        }
-
+       /// <summary>
+       /// Creates the queues.
+       /// </summary>
+       /// <param name="queues">The URI's for the queues to create.</param>
         public void CreateQueues(params Uri[] queues)
         {
             foreach (var queue in queues)
@@ -138,7 +151,13 @@ namespace ServiceBroker.Queues
             }
         }
 
-        public void Send(Uri fromQueue, Uri toQueue, MessageEnvelope payload)
+        /// <summary>
+        /// Sends the specified from queue. This method must be called from within a TransactionScope.
+        /// </summary>
+        /// <param name="fromQueue">The URI of the source queue.</param>
+        /// <param name="toQueue">The URI of the destination queue.</param>
+        /// <param name="message">The message to send.</param>
+        public void Send(Uri fromQueue, Uri toQueue, MessageEnvelope message)
         {
             EnsureEnlistment();
 
@@ -146,7 +165,7 @@ namespace ServiceBroker.Queues
             {
                 actions.BeginTransaction();
                 actions.GetQueue(fromQueue)
-                    .RegisterToSend(toQueue, payload);
+                    .RegisterToSend(toQueue, message);
                 actions.Commit();
             });
         }

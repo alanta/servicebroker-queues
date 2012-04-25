@@ -2,7 +2,7 @@ using System;
 
 namespace ServiceBroker.Queues
 {
-    public class Queue : IQueue
+    internal class Queue : IQueue
     {
         private readonly QueueManager queueManager;
         private readonly Uri queueUri;
@@ -22,5 +22,12 @@ namespace ServiceBroker.Queues
         {
             return queueManager.Receive(queueUri, timeout);
         }
+
+       public void Send( MessageEnvelope message, Uri destination = null )
+       {
+          if ( message == null ) throw new ArgumentNullException( "message" );
+
+          queueManager.Send( queueUri, destination ?? queueUri, message );
+       }
     }
 }

@@ -4,7 +4,7 @@ using Common.Logging;
 
 namespace ServiceBroker.Queues.Storage
 {
-    public class QueueActions
+    internal class QueueActions
     {
         private readonly Uri queueUri;
         private AbstractActions actions;

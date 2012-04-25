@@ -4,7 +4,7 @@ using System.IO;
 
 namespace ServiceBroker.Queues.Storage
 {
-   public class DefaultSerializationService : ISerializationService
+   internal class DefaultSerializationService : ISerializationService
    {
       public byte[] Serialize( MessageEnvelope messageEnvelope )
       {

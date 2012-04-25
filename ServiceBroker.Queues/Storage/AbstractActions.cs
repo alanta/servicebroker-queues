@@ -4,10 +4,10 @@ using System.Data.SqlClient;
 
 namespace ServiceBroker.Queues.Storage
 {
-    public abstract class AbstractActions
+    internal abstract class AbstractActions
     {
-        protected readonly SqlConnection connection;
-        protected SqlTransaction transaction;
+        private readonly SqlConnection connection;
+        private SqlTransaction transaction;
 
         protected AbstractActions(SqlConnection connection)
         {
