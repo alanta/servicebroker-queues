@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Transactions;
 using Common.Logging;
@@ -12,6 +13,7 @@ namespace ServiceBroker.Queues
         private readonly Timer purgeOldDataTimer;
         private readonly QueueStorage queueStorage;
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
+        private readonly object newMessageArrivedLock = new object();
 
         public QueueManager(string connectionString)
            : this( new QueueStorage( connectionString ))
@@ -74,16 +76,38 @@ namespace ServiceBroker.Queues
 
         public MessageEnvelope Receive(Uri queueUri)
         {
-            return Receive(queueUri, TimeSpan.FromDays(1));
+            return Receive(queueUri, null );
         }
 
-        public MessageEnvelope Receive(Uri queueUri, TimeSpan timeout)
+        public MessageEnvelope Receive( Uri queueUri, TimeSpan? timeout )
         {
-            EnsureEnslistment();
+           EnsureEnlistment();
 
-            var message = GetMessageFromQueue(queueUri);
-            return message;
+           if( null == timeout )
+              return GetMessageFromQueue( queueUri, null );
+
+           var remaining = timeout.Value;
+
+           while ( true )
+           {
+              lock ( newMessageArrivedLock )
+              {
+                 var sp = Stopwatch.StartNew();
+
+                 var message = GetMessageFromQueue( queueUri, remaining );
+                 if ( message != null )
+                    return message;
+
+                 remaining = remaining - sp.Elapsed;
+
+                 if ( remaining.TotalMilliseconds <= 0 || Monitor.Wait( newMessageArrivedLock, remaining ) == false )
+                 {
+                    return null;
+                 }
+              }
+           }
         }
+
 
         public Uri WaitForQueueWithMessageNotification()
         {
@@ -135,14 +159,14 @@ namespace ServiceBroker.Queues
                 throw new InvalidOperationException("You must use TransactionScope when using ServiceBroker.Queues");
         }
 
-        private MessageEnvelope GetMessageFromQueue(Uri queueUri)
+        private MessageEnvelope GetMessageFromQueue(Uri queueUri, TimeSpan? timeout)
         {
             AssertNotDisposed();
             MessageEnvelope message = null;
             queueStorage.Global(actions =>
             {
                 actions.BeginTransaction();
-                message = actions.GetQueue(queueUri).Dequeue();
+                message = actions.GetQueue(queueUri).Dequeue( timeout );
                 actions.Commit();
             });
             return message;

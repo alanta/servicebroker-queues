@@ -43,22 +43,27 @@ namespace ServiceBroker.Queues.Storage
           return message;
        }
 
-        public MessageEnvelope Dequeue()
+        public MessageEnvelope Dequeue( TimeSpan? timeout = null )
         {
             MessageEnvelope message = null;
             actions.ExecuteCommand("[SBQ].[Dequeue]", cmd =>
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@queueName", queueUri.ToServiceName());
+                if( timeout.HasValue )
+                {
+                   cmd.Parameters.AddWithValue( "@timeout", timeout.Value.TotalMilliseconds );
+                }
                 using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
                 {
-                    if (reader == null || !reader.Read())
+                    if (!reader.Read())
                     {
                         message = null;
                         return;
                     }
 
                     message = Fill(reader);
+                    logger.DebugFormat( "Received message {0} from queue {1}", message.ConversationId, queueUri );
                 }
             });
             return message;
@@ -80,10 +85,7 @@ namespace ServiceBroker.Queues.Storage
                 cmd.Parameters.AddWithValue("@data", data);
                 cmd.ExecuteNonQuery();
             });
-           logger.DebugFormat( "Created output message for 'tcp://{0}:{1}'",
-                               destination.Host,
-                               destination.Port
-              );
+            logger.DebugFormat( "Created output message from '{0}' to '{1}'", queueUri, destination );
         }
 
         private MessageEnvelope Fill( IDataRecord reader )

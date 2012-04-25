@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Transactions;
 using Xunit;
 
@@ -76,5 +78,47 @@ namespace ServiceBroker.Queues.Tests
                 Assert.Equal("hello", Encoding.Unicode.GetString(message.Data));
             }
         }
+
+       [Fact]
+       public void It_should_wait_for_a_message()
+       {
+          // Setup
+          var block = new AutoResetEvent( false );
+
+          //  Send delayed message and wait for it
+          var task = Task.Factory.StartNew( () =>
+                                               {
+                                                  block.WaitOne();
+                                                  Thread.Sleep( 500 );
+                                                  using (var tx = new TransactionScope())
+                                                  {
+                                                     queueManager
+                                                        .Send( queueUri, queueUri,
+                                                               new MessageEnvelope
+                                                                  {Data = Encoding.Unicode.GetBytes( "Relax" )} );
+                                                     tx.Complete();
+                                                  }
+                                               }
+             );
+
+          // act
+          MessageEnvelope message;
+          Stopwatch stopwatch;
+
+          using ( var tx = new TransactionScope() )
+          {
+             stopwatch = Stopwatch.StartNew();
+             block.Set();
+             message = queueManager.Receive( queueUri, TimeSpan.FromMilliseconds( 1000 ) );
+             stopwatch.Stop();
+             tx.Complete();
+          }
+
+          task.Wait( 1000 );
+
+          // Verify
+          Assert.Equal( "Relax", Encoding.Unicode.GetString( message.Data ) );
+          Assert.InRange( stopwatch.ElapsedMilliseconds, 500, 1000 );
+       }
     }
 }
