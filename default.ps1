@@ -48,11 +48,7 @@ Task Compile -depends Init {
 } 
 
 Task Test -depends Compile {
-  $old = pwd
-  cd $build_dir
-  Exec { "$tools_dir\xUnit\xunit.console.exe $build_dir\ServiceBroker.Queues.Tests.dll" }
-  cd $old		
-}
+  Exec { .$tools_dir\xUnit\xunit.console.exe $build_dir\ServiceBroker.Queues.Tests.dll }}
 
 
 Task Release -depends Test {
