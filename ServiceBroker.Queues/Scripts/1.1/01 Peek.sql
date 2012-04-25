@@ -25,7 +25,7 @@ BEGIN
    @ch = conversation_handle,
    @messagetypename = message_type_name,
    @data = message_body
-   FROM [SBUQ].[' + @queueName + '/queue]'
+   FROM [SBUQ].[' + @queueName + '/queue] WITH (NOLOCK)'
 
    BEGIN TRY
    EXEC sp_executesql
