@@ -1,7 +1,13 @@
-﻿CREATE SCHEMA [SBQ]
+﻿IF NOT exists(select * from sys.schemas where name = 'SBQ')
+BEGIN
+   EXEC('CREATE SCHEMA [SBQ]');
+END
 GO
 
-CREATE SCHEMA [SBUQ]
+IF NOT exists(select * from sys.schemas where name = 'SBUQ')
+BEGIN
+   EXEC('CREATE SCHEMA [SBUQ]');
+END
 GO
 
 CREATE TABLE [SBQ].[Detail]

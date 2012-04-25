@@ -1,3 +1,4 @@
+using System;
 using System.Configuration;
 using ServiceBroker.Queues.Storage;
 using System.Data.SqlClient;
@@ -10,16 +11,30 @@ namespace ServiceBroker.Queues.Tests
    {
       protected void EnsureStorage( string connectionString )
       {
-         CreateDatabaseIfNotExists( connectionString );
-         try
-         {
-            var storage = new QueueStorage( connectionString );
-            storage.Initialize();
-         }
-         catch (SqlException)
+         bool runInstall = CreateDatabaseIfNotExists( connectionString );
+
+         if( runInstall )
          {
             new SchemaManager().Install( connectionString, 2204 );
          }
+
+         var storage = new QueueStorage( connectionString );
+
+         try
+         {
+            storage.Initialize();
+         }
+         catch(Exception ex)
+         {
+            if ( !( ex is InvalidOperationException ) && !( ex is SqlException ) )
+            {
+               throw;
+            }
+
+            new SchemaManager().Install( connectionString, 2204 );
+            storage.Initialize();
+         }
+
          StorageUtil.PurgeAll( connectionString );
       }
 
@@ -28,7 +43,7 @@ namespace ServiceBroker.Queues.Tests
          get { return ConfigurationManager.ConnectionStrings["testqueue"].ConnectionString; }
       }
 
-      private void CreateDatabaseIfNotExists( string connectionString )
+      private bool CreateDatabaseIfNotExists( string connectionString )
       {
          var connectionStringBuilder = new SqlConnectionStringBuilder( connectionString );
          var databaseName = connectionStringBuilder.InitialCatalog;
@@ -40,14 +55,17 @@ namespace ServiceBroker.Queues.Tests
 
             command.CommandText =
                string.Format(
-                  @"IF ((SELECT DB_ID ('{0}')) IS NULL)
-            BEGIN
-               CREATE DATABASE [{0}]
-            END",
+@"IF ((SELECT DB_ID ('{0}')) IS NULL)
+BEGIN
+   CREATE DATABASE [{0}]
+   SELECT CAST( 1 AS BIT )
+END
+ELSE
+   SELECT CAST( 0 AS BIT )",
                   databaseName );
 
             command.CommandType = CommandType.Text;
-            command.ExecuteNonQuery();
+            return (bool)command.ExecuteScalar();
          }
       }
    }

@@ -13,7 +13,7 @@ namespace ServiceBroker.Queues.Storage
       public void Install( string connectionString, int? port = null )
       {
          var updater = DeployChanges.To
-            .SqlDatabase( connectionString )
+            .SqlDatabase( connectionString, "SBQ" )
             .WithScripts( new NormalizedEmbeddedScriptProvider( script => script.EndsWith( ".sql" ) ) )
             .LogToConsole()
             .Build();
