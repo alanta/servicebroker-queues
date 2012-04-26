@@ -44,13 +44,27 @@ namespace ServiceBroker.Queues.Storage
          }
       }
 
-      internal void Global( Action<GlobalActions> action )
+      public void Global( Action<GlobalActions> action )
       {
          using (var connection = new SqlConnection( connectionString ))
          {
             connection.Open();
-            var qa = new GlobalActions( connection );
-            action( qa );
+            using ( var qa = new GlobalActions( connection ) )
+            {
+               action( qa );
+            }
+         }
+      }
+
+      public void Queue( Uri queueUri, Action<QueueActions> action )
+      {
+         using ( var connection = new SqlConnection( connectionString ) )
+         {
+            connection.Open();
+            using ( var qa = new QueueActions( queueUri, connection ) )
+            {
+               action( qa );
+            }
          }
       }
    }

@@ -113,19 +113,19 @@ namespace ServiceBroker.Queues
 
            var remaining = timeout.Value;
 
+           var sp = Stopwatch.StartNew();
+
            while ( true )
            {
               lock ( newMessageArrivedLock )
               {
-                 var sp = Stopwatch.StartNew();
-
                  var message = GetMessageFromQueue( queueUri, remaining );
                  if ( message != null )
                     return message;
 
-                 remaining = remaining - sp.Elapsed;
+                 remaining = timeout.Value - sp.Elapsed;
 
-                 if ( remaining.TotalMilliseconds <= 0 || Monitor.Wait( newMessageArrivedLock, remaining ) == false )
+                 if ( remaining <= TimeSpan.Zero || Monitor.Wait( newMessageArrivedLock, remaining ) == false )
                  {
                     return null;
                  }
@@ -161,11 +161,10 @@ namespace ServiceBroker.Queues
         {
             EnsureEnlistment();
 
-            queueStorage.Global(actions =>
+            queueStorage.Queue( fromQueue, actions =>
             {
                 actions.BeginTransaction();
-                actions.GetQueue(fromQueue)
-                    .RegisterToSend(toQueue, message);
+                actions.RegisterToSend(toQueue, message);
                 actions.Commit();
             });
         }
@@ -178,14 +177,14 @@ namespace ServiceBroker.Queues
                 throw new InvalidOperationException("You must use TransactionScope when using ServiceBroker.Queues");
         }
 
-        private MessageEnvelope GetMessageFromQueue(Uri queueUri, TimeSpan? timeout)
+        private MessageEnvelope GetMessageFromQueue(Uri queueUri, TimeSpan? timeout )
         {
             AssertNotDisposed();
             MessageEnvelope message = null;
-            queueStorage.Global(actions =>
+            queueStorage.Queue( queueUri, actions =>
             {
                 actions.BeginTransaction();
-                message = actions.GetQueue(queueUri).Dequeue( timeout );
+                message = actions.Dequeue( timeout );
                 actions.Commit();
             });
             return message;
@@ -195,9 +194,9 @@ namespace ServiceBroker.Queues
         {
            AssertNotDisposed();
            MessageEnvelope message = null;
-           queueStorage.Global( actions =>
+           queueStorage.Queue( queueUri, actions =>
            {
-              message = actions.GetQueue( queueUri ).Peek();
+              message = actions.Peek();
            } );
            return message;
         }

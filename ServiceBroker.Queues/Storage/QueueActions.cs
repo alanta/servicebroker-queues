@@ -1,31 +1,29 @@
 using System;
 using System.Data;
+using System.Data.SqlClient;
+using System.Threading;
 using Common.Logging;
 
 namespace ServiceBroker.Queues.Storage
 {
-    internal class QueueActions
+    internal class QueueActions : AbstractActions
     {
-        private readonly Uri queueUri;
-        private AbstractActions actions;
-        private readonly ILog logger = LogManager.GetLogger(typeof (QueueActions));
+       private readonly Uri queueUri;
+       private readonly ILog logger = LogManager.GetLogger(typeof (QueueActions));
        private readonly ISerializationService serializationService;
 
-       public QueueActions( Uri queueUri, AbstractActions actions, ISerializationService serializationService = null )
+       public QueueActions( Uri queueUri, SqlConnection connection, ISerializationService serializationService = null ) : base( connection )
        {
           if ( queueUri == null )
              throw new ArgumentNullException( "queueUri" );
-          if ( actions == null )
-             throw new ArgumentNullException( "actions" );
           this.queueUri = queueUri;
-          this.actions = actions;
           this.serializationService = serializationService ?? new DefaultSerializationService();
        }
 
        public MessageEnvelope Peek()
        {
           MessageEnvelope message = null;
-          actions.ExecuteCommand( "[SBQ].[Peek]", cmd =>
+          ExecuteCommand( "[SBQ].[Peek]", cmd =>
           {
              cmd.CommandType = CommandType.StoredProcedure;
              cmd.Parameters.AddWithValue( "@queueName", queueUri.ToServiceName() );
@@ -46,33 +44,45 @@ namespace ServiceBroker.Queues.Storage
         public MessageEnvelope Dequeue( TimeSpan? timeout = null )
         {
             MessageEnvelope message = null;
-            actions.ExecuteCommand("[SBQ].[Dequeue]", cmd =>
+            ExecuteCommand("[SBQ].[Dequeue]", cmd =>
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@queueName", queueUri.ToServiceName());
                 if( timeout.HasValue )
                 {
+                   if( timeout.Value > TimeSpan.FromSeconds( 25 ) )
+                   {
+                      cmd.CommandTimeout = 5000 + (int)timeout.Value.TotalMilliseconds;
+                   }
                    cmd.Parameters.AddWithValue( "@timeout", timeout.Value.TotalMilliseconds );
                 }
-                using (var reader = cmd.ExecuteReader(CommandBehavior.Default))
+                try
                 {
-                    if (!reader.Read())
-                    {
-                        message = null;
-                        return;
-                    }
+                   using (var reader = cmd.ExecuteReader( CommandBehavior.Default ))
+                   {
+                      if ( !reader.Read() )
+                      {
+                         message = null;
+                         return;
+                      }
 
-                    message = Fill(reader);
-                    logger.DebugFormat( "Received message {0} from queue {1}", message.ConversationId, queueUri );
+                      message = Fill( reader );
+                      logger.DebugFormat( "Received message {0} from queue {1}", message.ConversationId, queueUri );
+                   }
+                }
+                catch ( SqlException )
+                {
+                   if ( !isCancelled )
+                      throw;
                 }
             });
             return message;
         }
 
-        public void RegisterToSend(Uri destination, MessageEnvelope payload)
+       public void RegisterToSend(Uri destination, MessageEnvelope payload)
         {
            byte[] data = serializationService.Serialize( payload );
-            actions.ExecuteCommand("[SBQ].[RegisterToSend]", cmd =>
+            ExecuteCommand("[SBQ].[RegisterToSend]", cmd =>
             {
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@localServiceName", queueUri.ToServiceName());
