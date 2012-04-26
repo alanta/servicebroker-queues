@@ -4,7 +4,7 @@ properties {
   $build_dir = "$base_dir\build" 
   $buildartifacts_dir = "$build_dir\" 
   $sln_file = "$base_dir\ServiceBroker.Queues.sln" 
-  $version = "1.0.0.0"
+  $version = "1.1.0.0"
   $tools_dir = "$base_dir\Tools"
   $release_dir = "$base_dir\Release"
   $xunit = "$base_dir\Tools\xUnit\xunit.console.clr4.exe"
