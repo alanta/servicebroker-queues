@@ -15,7 +15,7 @@ namespace ServiceBroker.Queues.Tests
 
          if( runInstall )
          {
-            new SchemaManager().Install( connectionString, 2204 );
+            SchemaManager.Install( connectionString, 2204 );
          }
 
          var storage = new QueueStorage( connectionString );
@@ -31,7 +31,7 @@ namespace ServiceBroker.Queues.Tests
                throw;
             }
 
-            new SchemaManager().Install( connectionString, 2204 );
+            SchemaManager.Install( connectionString, 2204 );
             storage.Initialize();
          }
 

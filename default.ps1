@@ -49,15 +49,19 @@ Task Compile -depends Init {
 } 
 
 Task Test -depends Compile {
-  Exec { .$xunit $build_dir\ServiceBroker.Queues.Tests.dll }}
+  Exec { .$xunit $build_dir\ServiceBroker.Queues.Tests.dll }
+}
 
 
 Task Release -depends Test {
 	& $tools_dir\zip.exe -9 -A -j `
 		$release_dir\ServiceBroker.Queues.zip `
-        $build_dir\ServiceBroker.Queues.dll `
-        $build_dir\ServiceBroker.Queues.xml `
-		license.txt `
+      $build_dir\ServiceBroker.Queues.dll `
+      $build_dir\ServiceBroker.Queues.xml `
+      $build_dir\ServiceBroker.Install.exe `
+      $build_dir\DbUp.dll `
+      $build_dir\Common.Logging.dll `
+		  license.txt `
 		acknowledgements.txt
 	if ($lastExitCode -ne 0) {
         throw "Error: Failed to execute ZIP command"

@@ -13,8 +13,6 @@ namespace ServiceBroker.Queues.Storage
    /// </summary>
    public class SchemaManager
    {
-      private readonly ILog logger = LogManager.GetLogger<SchemaManager>();
-
       /// <summary>
       /// Gets the supported database schema version.
       /// </summary>
@@ -27,12 +25,12 @@ namespace ServiceBroker.Queues.Storage
       /// <remarks>The user should have all rights on the database.</remarks>
       /// <param name="connectionString">The database connection string.</param>
       /// <param name="port">The TCP port for the end point or <c>null</c> for the default (2204).</param>
-      public void Install( string connectionString, int? port = null )
+      public static void Install( string connectionString, int? port = null )
       {
          var updater = DeployChanges.To
             .SqlDatabase( connectionString, "SBQ" )
             .WithScripts( new NormalizedEmbeddedScriptProvider( script => script.EndsWith( ".sql" ) ) )
-            .LogTo( new UpgradeLogAdapter( logger ) )
+            .LogTo( new UpgradeLogAdapter( LogManager.GetLogger<SchemaManager>() ) )
             .Build();
 
          if ( updater.IsUpgradeRequired() )
@@ -52,7 +50,7 @@ namespace ServiceBroker.Queues.Storage
       /// </summary>
       /// <param name="connectionString">The connection string.</param>
       /// <param name="port">The TCP port or <c>null</c> for the default value (2204).</param>
-      public void ConfigureEndPoint( string connectionString, int? port = null )
+      public static void ConfigureEndPoint( string connectionString, int? port = null )
       {
          var newPort = port ?? 2204;
 
