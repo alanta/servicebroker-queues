@@ -25,5 +25,12 @@ namespace ServiceBroker.Queues
       /// <param name="message">The message.</param>
       /// <param name="destination">The URI of the destination queue or <c>null</c> to post it to this queue.</param>
       void Send( MessageEnvelope message, Uri destination = null );
+
+      /// <summary>
+      /// Sends the specified message to the destination queue.
+      /// </summary>
+      /// <param name="message">The message.</param>
+      /// <param name="destination">The destination queue name.</param>
+      void Send( MessageEnvelope message, string destination );
    }
 }

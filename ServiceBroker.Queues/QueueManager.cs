@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Transactions;
 using Common.Logging;
@@ -16,13 +17,18 @@ namespace ServiceBroker.Queues
         private readonly Timer purgeOldDataTimer;
         private readonly QueueStorage queueStorage;
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
+        private readonly Uri baseUri = new Uri( "tcp://localhost:2204" );
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QueueManager"/> class.
         /// </summary>
-        /// <param name="connectionString">The database connection string.</param>
-        public QueueManager(string connectionString)
+        /// <param name="connectionString">The connectionstring.</param>
+        /// <param name="scheme">The scheme or <c>null</c> to use the default (tcp).</param>
+        /// <param name="host">The host or <c>null</c> for localhost.</param>
+        /// <param name="port">The port or <c>null</c> for the default (2204).</param>
+        public QueueManager( string connectionString, string scheme = null, string host = null, int? port = null )
         {
+           baseUri = new Uri( string.Format( "{0}://{1}:{2}", scheme ?? Uri.UriSchemeNetTcp, host ?? "localhost", port ?? 2204 ) );
            queueStorage = new QueueStorage( connectionString );
            queueStorage.Initialize();
            purgeOldDataTimer = new Timer( PurgeOldData, null, TimeSpan.FromMinutes( 3 ), TimeSpan.FromMinutes( 3 ) );
@@ -69,6 +75,26 @@ namespace ServiceBroker.Queues
         }
 
         /// <summary>
+        /// Gets the queue URI.
+        /// </summary>
+        /// <param name="name">The queue name.</param>
+        /// <returns></returns>
+        public Uri GetQueueUri( string name )
+        {
+           return new Uri( baseUri, name );
+        }
+
+        /// <summary>
+        /// Gets the queue.
+        /// </summary>
+        /// <param name="name">The name of the queue.</param>
+        /// <returns></returns>
+        public IQueue GetQueue( string name )
+        {
+           return GetQueue( GetQueueUri( name ) );
+        }
+
+        /// <summary>
         /// Gets the queue.
         /// </summary>
         /// <param name="queueUri">The queue URI.</param>
@@ -82,7 +108,17 @@ namespace ServiceBroker.Queues
         }
 
         /// <summary>
-        /// Peeksa  the specified queue.
+        /// Peeks ate the specified queue.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
+        public MessageEnvelope Peek( string name )
+        {
+           return Peek( GetQueueUri( name ) );
+        }
+
+        /// <summary>
+        /// Peek at the specified queue.
         /// </summary>
         /// <param name="queueUri">The queue URI.</param>
         /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
@@ -93,6 +129,17 @@ namespace ServiceBroker.Queues
 
            return PeekAtQueue( queueUri );
         }
+
+       /// <summary>
+       /// Receives a message from the specified queue.
+       /// </summary>
+       /// <param name="name">The queue name.</param>
+       /// <param name="timeout">The time to wait for a message or <c>null</c> to return immediately.</param>
+       /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
+       public MessageEnvelope Receive( string name, TimeSpan? timeout = null )
+       {
+          return Receive( GetQueueUri( name ), timeout );
+       }
 
        /// <summary>
        /// Receives a message from the specified queue.
@@ -132,6 +179,16 @@ namespace ServiceBroker.Queues
        /// <summary>
        /// Creates the queues.
        /// </summary>
+       /// <param name="queueNames">The names of the queues to create.</param>
+       public void CreateQueues( params string[] queueNames )
+       {
+          CreateQueues( queueNames.Select( n => new Uri( baseUri, n ) ).ToArray() );
+       }
+
+
+       /// <summary>
+       /// Creates the queues.
+       /// </summary>
        /// <param name="queues">The URI's for the queues to create.</param>
         public void CreateQueues(params Uri[] queues)
         {
@@ -146,6 +203,7 @@ namespace ServiceBroker.Queues
                 });
             }
         }
+
 
         /// <summary>
         /// Sends the specified from queue. This method must be called from within a TransactionScope.

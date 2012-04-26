@@ -11,13 +11,12 @@ namespace ServiceBroker.Queues.Tests
     public class ReceivingFromServiceBrokerQueue : QueueTest, IDisposable
     {
         private readonly QueueManager queueManager;
-        private readonly Uri queueUri = new Uri("tcp://localhost:2204/h");
 
         public ReceivingFromServiceBrokerQueue()
         {
            EnsureStorage( ConnectionString );
            queueManager = new QueueManager( ConnectionString );
-           queueManager.CreateQueues( queueUri );
+           queueManager.CreateQueues( "h" );
         }
 
         public void Dispose()
@@ -27,27 +26,24 @@ namespace ServiceBroker.Queues.Tests
 
        [Fact]
         public void CanReceiveFromQueue()
-        {
+       {
+          var h = queueManager.GetQueue( "h" );
             using (var tx = new TransactionScope())
             {
-                queueManager.Send(queueUri, queueUri,
-                                   new MessageEnvelope
-                                   {
-                                       Data = Encoding.Unicode.GetBytes("hello"),
-                                   });
+                h.Send( new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
                 tx.Complete();
             }
             Thread.Sleep(50);
             using(var tx = new TransactionScope())
             {
-                var message = queueManager.GetQueue(queueUri).Receive();
+                var message = h.Receive();
                 Assert.Equal("hello", Encoding.Unicode.GetString(message.Data));
                 tx.Complete();
             }
 
             using (var tx = new TransactionScope())
             {
-                var message = queueManager.GetQueue(queueUri).Receive();
+                var message = h.Receive();
                 Assert.Null(message);
                 tx.Complete();
             }
@@ -56,25 +52,22 @@ namespace ServiceBroker.Queues.Tests
         [Fact]
         public void WhenRevertingTransactionMessageGoesBackToQueue()
         {
+           var h = queueManager.GetQueue( "h" );
             using (var tx = new TransactionScope())
             {
-                queueManager.Send(queueUri, queueUri,
-                                   new MessageEnvelope
-                                   {
-                                       Data = Encoding.Unicode.GetBytes("hello"),
-                                   });
+                h.Send( new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
                 tx.Complete();
             }
             Thread.Sleep(30);
 
             using (new TransactionScope())
             {
-                var message = queueManager.GetQueue(queueUri).Receive();
+                var message = h.Receive();
                 Assert.Equal("hello", Encoding.Unicode.GetString(message.Data));
             }
             using (new TransactionScope())
             {
-                var message = queueManager.GetQueue(queueUri).Receive();
+                var message = h.Receive();
                 Assert.Equal("hello", Encoding.Unicode.GetString(message.Data));
             }
         }
@@ -84,21 +77,20 @@ namespace ServiceBroker.Queues.Tests
        {
           // Setup
           var block = new AutoResetEvent( false );
+          var h = queueManager.GetQueue( "h" );
 
           //  Send delayed message and wait for it
-          var task = Task.Factory.StartNew( () =>
-                                               {
-                                                  block.WaitOne();
-                                                  Thread.Sleep( 500 );
-                                                  using (var tx = new TransactionScope())
-                                                  {
-                                                     queueManager
-                                                        .Send( queueUri, queueUri,
-                                                               new MessageEnvelope
-                                                                  {Data = Encoding.Unicode.GetBytes( "Relax" )} );
-                                                     tx.Complete();
-                                                  }
-                                               }
+          var task = Task.Factory.StartNew(
+             () =>
+                {
+                   block.WaitOne();
+                   Thread.Sleep( 500 );
+                   using (var tx = new TransactionScope())
+                   {
+                      h.Send( new MessageEnvelope {Data = Encoding.Unicode.GetBytes( "Relax" )} );
+                      tx.Complete();
+                   }
+                }
              );
 
           // act
@@ -109,7 +101,7 @@ namespace ServiceBroker.Queues.Tests
           {
              stopwatch = Stopwatch.StartNew();
              block.Set();
-             message = queueManager.Receive( queueUri, TimeSpan.FromMilliseconds( 1000 ) );
+             message = h.Receive( TimeSpan.FromMilliseconds( 1000 ) );
              stopwatch.Stop();
              tx.Complete();
           }

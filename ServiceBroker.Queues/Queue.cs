@@ -23,6 +23,11 @@ namespace ServiceBroker.Queues
             return queueManager.Receive(queueUri, timeout);
         }
 
+        public void Send( MessageEnvelope message, string destination )
+        {
+           Send( message, queueManager.GetQueueUri( destination ) );
+        }
+
        public void Send( MessageEnvelope message, Uri destination = null )
        {
           if ( message == null ) throw new ArgumentNullException( "message" );
