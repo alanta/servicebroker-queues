@@ -16,7 +16,6 @@ namespace ServiceBroker.Queues
         private readonly Timer purgeOldDataTimer;
         private readonly QueueStorage queueStorage;
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
-        private readonly object newMessageArrivedLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QueueManager"/> class.
@@ -55,12 +54,12 @@ namespace ServiceBroker.Queues
             if(wasDisposed)
                 return;
 
+            wasDisposed = true;
+
             if (purgeOldDataTimer != null)
             {
                 purgeOldDataTimer.Dispose();
             }
-
-            wasDisposed = true;
         }
 
         private void AssertNotDisposed()
@@ -117,18 +116,15 @@ namespace ServiceBroker.Queues
 
            while ( true )
            {
-              lock ( newMessageArrivedLock )
+              var message = GetMessageFromQueue( queueUri, remaining );
+              if ( message != null )
+                 return message;
+
+              remaining = timeout.Value - sp.Elapsed;
+
+              if ( remaining <= TimeSpan.Zero )
               {
-                 var message = GetMessageFromQueue( queueUri, remaining );
-                 if ( message != null )
-                    return message;
-
-                 remaining = timeout.Value - sp.Elapsed;
-
-                 if ( remaining <= TimeSpan.Zero || Monitor.Wait( newMessageArrivedLock, remaining ) == false )
-                 {
-                    return null;
-                 }
+                 return null;
               }
            }
         }
