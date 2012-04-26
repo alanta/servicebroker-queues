@@ -10,19 +10,6 @@ namespace ServiceBroker.Queues.Storage
         {
         }
 
-        public Uri PollForMessage()
-        {
-            string queueName = null;
-
-            ExecuteCommand("[dbo].[GetQueueWithMessages]", cmd =>
-            {
-                cmd.CommandType = CommandType.StoredProcedure;
-                queueName = Convert.ToString(cmd.ExecuteScalar());
-            });
-
-            return string.IsNullOrEmpty(queueName) ? null : new Uri("tcp://" + queueName.Replace("/queue", string.Empty));
-        }
-
         public void CreateQueue(Uri queueUri)
         {
             ExecuteCommand("[SBQ].[CreateQueueIfDoesNotExist]", cmd =>
