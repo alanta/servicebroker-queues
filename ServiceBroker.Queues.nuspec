@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>servicebroker-queues</id>
+    <version>$version$</version>
+    <title>ServiceBroker.Queues</title>
+    <authors>Corey Kaylor, Marnix van Valen</authors>
+    <owners>Marnix van Valen</owners>
+    <licenseUrl>https://github.com/alanta/servicebroker-queues/blob/master/license.txt</licenseUrl>
+    <projectUrl>https://github.com/alanta/servicebroker-queues</projectUrl>
+    <iconUrl>https://github.com/alanta/servicebroker-queues/wiki/logo-128x128.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A simple API for SQL Server-based message queueing. Includes a full database schema for sending and receiving messages and maintaining a history. The API is based on Rhino Queues. Schema can be setup through the API or a console application.</description>
+    <summary>A simple API to use SQL Server Queueing for application messaging.</summary>
+    <releaseNotes>First NuGet release.</releaseNotes>
+    <copyright>Copyright 2012</copyright>
+    <tags>Queue Persistence Messaging SqlServer</tags>
+    <dependencies>
+        <dependency id="DbUp" version="2.0.67" />
+        <dependency id="Common.Logging" version="2.0.0" />
+    </dependencies>
+  </metadata>
+</package>
