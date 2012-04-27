@@ -1,10 +1,14 @@
 properties { 
+  if ($build_number -eq $null) {
+    $build_number = 0 
+  }
   $base_dir  = Split-Path $psake.build_script_file
   $lib_dir = "$base_dir\Lib"
   $build_dir = "$base_dir\build" 
   $buildartifacts_dir = "$build_dir\artifacts"
   $sln_file = "$base_dir\ServiceBroker.Queues.sln" 
-  $version = "1.1.0.0"
+  $version = "1.1.1"
+  $assembly_version = "$version.$build_number"
   $tools_dir = "$base_dir\Tools"
   $release_dir = "$base_dir\Release"
   $xunit = "$base_dir\Tools\xUnit\xunit.console.clr4.exe"
@@ -26,7 +30,7 @@ Task Init -depends Clean {
 		-description "SQL Server Service Broker queue API" `
 		-company "" `
 		-product "ServiceBroker Queues $version" `
-		-version $version `
+		-version $assembly_version `
 		-copyright "" `
         -clsCompliant "true"
 
@@ -36,7 +40,7 @@ Task Init -depends Clean {
 		-description "SQL Server Service Broker queue API" `
 		-company "" `
 		-product "ServiceBroker Queues $version" `
-		-version $version `
+		-version $assembly_version `
 		-copyright "" `
         -clsCompliant "true"
         
@@ -46,7 +50,7 @@ Task Init -depends Clean {
 		-description "SQL Server Service Broker queue Installer" `
 		-company "" `
 		-product "ServiceBroker Queues $version" `
-		-version $version `
+		-version $assembly_version `
 		-copyright "" `
         -clsCompliant "true"
 
