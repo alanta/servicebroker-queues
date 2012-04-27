@@ -17,7 +17,7 @@ namespace ServiceBroker.Queues
         private readonly Timer purgeOldDataTimer;
         private readonly QueueStorage queueStorage;
         private readonly ILog logger = LogManager.GetLogger(typeof(QueueManager));
-        private readonly Uri baseUri = new Uri( "tcp://localhost:2204" );
+        private readonly Uri baseUri;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="QueueManager"/> class.
@@ -28,7 +28,7 @@ namespace ServiceBroker.Queues
         /// <param name="port">The port or <c>null</c> for the default (2204).</param>
         public QueueManager( string connectionString, string scheme = null, string host = null, int? port = null )
         {
-           baseUri = new Uri( string.Format( "{0}://{1}:{2}", scheme ?? Uri.UriSchemeNetTcp, host ?? "localhost", port ?? 2204 ) );
+           baseUri = new Uri( string.Format( "{0}://{1}:{2}", scheme ?? "tcp", host ?? "localhost", port ?? 2204 ) );
            queueStorage = new QueueStorage( connectionString );
            queueStorage.Initialize();
            purgeOldDataTimer = new Timer( PurgeOldData, null, TimeSpan.FromMinutes( 3 ), TimeSpan.FromMinutes( 3 ) );
