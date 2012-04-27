@@ -8,6 +8,12 @@ namespace ServiceBroker.Queues
    public interface IQueue
    {
       /// <summary>
+      /// Gets the queue URI.
+      /// </summary>
+      /// <value>The URI.</value>
+      Uri Uri { get; }
+
+      /// <summary>
       /// Receive a message from this queue and return immediately.
       /// </summary>
       /// <returns>The message at the top of the queue or <c>null</c> if no message is available.</returns>
@@ -22,15 +28,15 @@ namespace ServiceBroker.Queues
       /// <summary>
       /// Sends the specified message to the destination queue.
       /// </summary>
-      /// <param name="message">The message.</param>
       /// <param name="destination">The URI of the destination queue or <c>null</c> to post it to this queue.</param>
-      void Send( MessageEnvelope message, Uri destination = null );
+      /// <param name="message">The message.</param>
+      void Send( Uri destination, MessageEnvelope message );
 
       /// <summary>
       /// Sends the specified message to the destination queue.
       /// </summary>
-      /// <param name="message">The message.</param>
       /// <param name="destination">The destination queue name.</param>
-      void Send( MessageEnvelope message, string destination );
+      /// <param name="message">The message.</param>
+      void Send( string destination, MessageEnvelope message );
    }
 }

@@ -13,6 +13,11 @@ namespace ServiceBroker.Queues
             this.queueUri = queueUri;
         }
 
+        public Uri Uri
+        {
+            get { return queueUri; }
+        }
+
         public MessageEnvelope Receive()
         {
             return queueManager.Receive(queueUri);
@@ -23,12 +28,12 @@ namespace ServiceBroker.Queues
             return queueManager.Receive(queueUri, timeout);
         }
 
-        public void Send( MessageEnvelope message, string destination )
+        public void Send( string destination, MessageEnvelope message )
         {
-           Send( message, queueManager.GetQueueUri( destination ) );
+           Send( queueManager.GetQueueUri( destination ), message );
         }
 
-       public void Send( MessageEnvelope message, Uri destination = null )
+       public void Send( Uri destination, MessageEnvelope message )
        {
           if ( message == null ) throw new ArgumentNullException( "message" );
 

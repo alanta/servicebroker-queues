@@ -30,7 +30,7 @@ namespace ServiceBroker.Queues.Tests
           var h = queueManager.GetQueue( "h" );
             using (var tx = new TransactionScope())
             {
-                h.Send( new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
+                h.Send( (Uri) null, new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
                 tx.Complete();
             }
             Thread.Sleep(50);
@@ -55,7 +55,7 @@ namespace ServiceBroker.Queues.Tests
            var h = queueManager.GetQueue( "h" );
             using (var tx = new TransactionScope())
             {
-                h.Send( new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
+                h.Send( (Uri) null, new MessageEnvelope { Data = Encoding.Unicode.GetBytes("hello") });
                 tx.Complete();
             }
             Thread.Sleep(30);
@@ -87,7 +87,7 @@ namespace ServiceBroker.Queues.Tests
                    Thread.Sleep( 500 );
                    using (var tx = new TransactionScope())
                    {
-                      h.Send( new MessageEnvelope {Data = Encoding.Unicode.GetBytes( "Relax" )} );
+                      h.Send( (Uri) null, new MessageEnvelope {Data = Encoding.Unicode.GetBytes( "Relax" )} );
                       tx.Complete();
                    }
                 }
