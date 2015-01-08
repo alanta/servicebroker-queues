@@ -24,8 +24,7 @@ namespace ServiceBroker.Queues.Storage
       /// </summary>
       /// <remarks>The user should have all rights on the database.</remarks>
       /// <param name="connectionString">The database connection string.</param>
-      /// <param name="port">The TCP port for the end point or <c>null</c> for the default (2204).</param>
-      public static void Install( string connectionString, int? port = null )
+      public static void Install( string connectionString )
       {
          var updater = DeployChanges.To
             .SqlDatabase( connectionString, "SBQ" )
@@ -41,60 +40,9 @@ namespace ServiceBroker.Queues.Storage
                throw new InvalidOperationException( "Unable to upgrade schema for ServiceBroker." );
             }
          }
-
-         ConfigureEndPoint( connectionString, port );
       }
 
-      /// <summary>
-      /// Configures the service broker TCP end point. If the endpoint already exists it will be recreated.
-      /// </summary>
-      /// <param name="connectionString">The connection string.</param>
-      /// <param name="port">The TCP port or <c>null</c> for the default value (2204).</param>
-      public static void ConfigureEndPoint( string connectionString, int? port = null )
-      {
-         var newPort = port ?? 2204;
-
-         using ( var connection = new SqlConnection( connectionString ) )
-         {
-            connection.Open();
-
-            var command = connection.CreateCommand();
-            command.CommandText = "select port from sys.tcp_endpoints e WHERE e.[name]='ServiceBusEndPoint'";
-
-            var currentPort = (int?) command.ExecuteScalar();
-
-            if ( currentPort.HasValue && currentPort == newPort )
-            {
-               return; // nothing to do
-            }
-
-            if( currentPort.HasValue )
-            {
-               command.CommandText = "DROP ENDPOINT ServiceBusEndpoint";
-               command.ExecuteNonQuery();
-            }
-
-            command.CommandText =
-               @"CREATE ENDPOINT ServiceBusEndpoint
-   STATE = STARTED
-   AS TCP
-   (
-      LISTENER_PORT = $port$
-   )
-   FOR SERVICE_BROKER
-   (
-      AUTHENTICATION = WINDOWS
-   )"
-               .Replace( "$port$", newPort.ToString( CultureInfo.InvariantCulture ) );
-            command.ExecuteNonQuery();
-
-            command.CommandText = @"USE master;
-GRANT CONNECT ON ENDPOINT::ServiceBusEndpoint TO [public];";
-
-            command.ExecuteNonQuery();
-         }
-      }
-
+      
       private class UpgradeLogAdapter : IUpgradeLog
       {
          private readonly ILog log;

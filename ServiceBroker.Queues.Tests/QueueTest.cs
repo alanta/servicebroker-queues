@@ -15,7 +15,7 @@ namespace ServiceBroker.Queues.Tests
 
          if( runInstall )
          {
-            SchemaManager.Install( connectionString, 2204 );
+            SchemaManager.Install( connectionString );
          }
 
          var storage = new QueueStorage( connectionString );
@@ -31,8 +31,13 @@ namespace ServiceBroker.Queues.Tests
                throw;
             }
 
-            SchemaManager.Install( connectionString, 2204 );
+            SchemaManager.Install( connectionString );
             storage.Initialize();
+         }
+
+         using ( var qManager = new QueueManager( connectionString, port: 2204 ) )
+         {
+            qManager.ConfigureEndPoint();
          }
 
          StorageUtil.PurgeAll( connectionString );

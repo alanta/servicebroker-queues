@@ -204,6 +204,25 @@ namespace ServiceBroker.Queues
             }
         }
 
+        /// <summary>
+        /// Configures the network end point.
+        /// </summary>
+        /// <remarks>End points enable network connections to other SQL Server instances for message delivery.</remarks>
+        public void ConfigureEndPoint()
+        {
+           queueStorage.Global( actions => actions.ConfigureEndPoint( baseUri.Port ) );
+        }
+
+        /// <summary>
+        /// Adds a route to a remote message queue.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="endpoint">The endpoint.</param>
+        /// <param name="brokerInstance">The broker instance.</param>
+        public void AddRoute( string name, Uri endpoint, Guid? brokerInstance )
+        {
+           queueStorage.Global( actions => actions.AddRoute( name, endpoint.ToServiceName(), endpoint, brokerInstance ) );
+        }
 
         /// <summary>
         /// Sends the specified from queue. This method must be called from within a TransactionScope.
