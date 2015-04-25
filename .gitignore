@@ -11,3 +11,6 @@ AssemblyInfo.cs
 *.user
 *.pidb
 *.userprefs
+_NCrunch*
+packages/
+*ncrunchproject
