@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using DbUp.Engine;
+using DbUp.Engine.Transactions;
 using DbUp.ScriptProviders;
 
 namespace ServiceBroker.Queues.Scripts
@@ -45,7 +46,7 @@ namespace ServiceBroker.Queues.Scripts
       /// Gets all scripts that should be executed.
       /// </summary>
       /// <returns></returns>
-      public IEnumerable<SqlScript> GetScripts()
+      public IEnumerable<SqlScript> GetScripts(IConnectionManager connectionManager)
       {
          return assembly
              .GetManifestResourceNames()

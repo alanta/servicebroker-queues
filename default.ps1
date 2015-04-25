@@ -7,11 +7,11 @@ properties {
   $build_dir = "$base_dir\build" 
   $buildartifacts_dir = "$build_dir\artifacts"
   $sln_file = "$base_dir\ServiceBroker.Queues.sln" 
-  $version = "1.1.1"
+  $version = "1.1.2"
   $assembly_version = "$version.$build_number"
   $tools_dir = "$base_dir\Tools"
   $release_dir = "$base_dir\Release"
-  $xunit = "$base_dir\Tools\xUnit\xunit.console.clr4.exe"
+  $xunit = "$base_dir\Packages\xunit.runner.console.2.0.0\tools\xunit.console.exe"
 } 
 
 include .\psake_ext.ps1
@@ -22,6 +22,11 @@ Task Clean {
   remove-item -force -recurse $build_dir -ErrorAction SilentlyContinue
   remove-item -force -recurse $release_dir -ErrorAction SilentlyContinue
 } 
+
+Task RestorePackages {
+  Exec { .\Tools\NuGet restore }
+  Exec { .\Tools\Nuget install xunit.runner.console -version 2.0.0 }
+}
 
 Task Init -depends Clean { 
 	Generate-Assembly-Info `
@@ -59,12 +64,12 @@ Task Init -depends Clean {
 	new-item $buildartifacts_dir -itemType directory  | Out-Null
 } 
 
-Task Compile -depends Init { 
+Task Compile -depends Init,RestorePackages { 
   Exec { msbuild $sln_file /t:Rebuild /p:Configuration=Release /p:OutDir=$buildartifacts_dir/ }
 } 
 
 Task Test -depends Compile {
-  Exec { .$xunit $buildartifacts_dir\ServiceBroker.Queues.Tests.dll }
+  Exec { .$xunit $buildartifacts_dir\ServiceBroker.Queues.Tests.dll -parallel none}
 }
 
 Task Release -depends Test {
@@ -85,13 +90,13 @@ Task Release -depends Test {
 
     new-item $nuget_dir -itemType directory  | Out-Null
     new-item $nuget_dir\lib -itemType directory  | Out-Null
-    new-item $nuget_dir\lib\net35 -itemType directory  | Out-Null
+    new-item $nuget_dir\lib\net45 -itemType directory  | Out-Null
     new-item $nuget_dir\tools -itemType directory  | Out-Null
 
     Copy-Item license.txt $nuget_dir
     Copy-Item acknowledgements.txt $nuget_dir
-    Copy-Item $buildartifacts_dir\ServiceBroker.Queues.dll $nuget_dir\lib\net35
-    Copy-Item $buildartifacts_dir\ServiceBroker.Queues.xml $nuget_dir\lib\net35
+    Copy-Item $buildartifacts_dir\ServiceBroker.Queues.dll $nuget_dir\lib\net45
+    Copy-Item $buildartifacts_dir\ServiceBroker.Queues.xml $nuget_dir\lib\net45
     Copy-Item $buildartifacts_dir\ServiceBroker.Queues.xml $nuget_dir\tools
 
     Copy-Item *.nuspec $nuget_dir

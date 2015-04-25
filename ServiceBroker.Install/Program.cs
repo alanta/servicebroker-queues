@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Specialized;
 using System.Reflection;
 using Common.Logging;
+using Common.Logging.Configuration;
 
 namespace ServiceBroker.Install
 {
